@@ -5,7 +5,7 @@ const chromeLauncher = require("chrome-launcher");
 const { convertArrayToCSV } = require('convert-array-to-csv');
 const converter = require('convert-array-to-csv');
 
-let array = fs.readFileSync("URLs.csv")
+let array = fs.readFileSync("urls.csv")
                 .toString().split("\n");
   
 let result = [];
