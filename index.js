@@ -20,20 +20,28 @@ result.push(
   
 console.log(array);
 
-(async () => {
-  const chrome = await chromeLauncher
-    .launch({ 
-      chromeFlags: [
-        //'--no-first-run',
-        '--headless'//,
-        //'--disable-gpu',
-        //'--no-sandbox'
-      ]
-    })
+async function launch() {
+
+  for (i in array) {
   
-  // Declaring an object to specify score 
-  // for what audits, categories and type
-  // of output that needs to be generated 
+    console.log('waiting');
+    await wait(2000);
+    
+    console.log('ok');
+
+  const chrome = await chromeLauncher
+  .launch({ 
+    chromeFlags: [
+      //'--no-first-run',
+      '--headless'//,
+      //'--disable-gpu',
+      //'--no-sandbox'
+    ]
+  })
+
+// Declaring an object to specify score 
+// for what audits, categories and type
+// of output that needs to be generated 
   const options = {
     logLevel: "info",
     output: "csv",
@@ -47,33 +55,30 @@ console.log(array);
     strategy: "mobile",
     port: chrome.port,
   };
+
+    
   
-  // Traversing through each URL 
-  for (i in array) {
-  
-    console.log('waiting');
-    await wait(2000);
-    console.log('ok');
 
     console.log(i);
 
-      let configuration = "";
+    let configuration = "";
     
-      const runnerResult = 
-        await lighthouse(array[i], options);
+    try {
+    const runnerResult = 
+      await lighthouse(array[i], options);
 
-        console.log('************lighthouse results')
+      console.log('************lighthouse results')
   
     if (runnerResult.lhr.audits) {
-        //console.log(runnerResult.lhr.audits);
+        console.log(runnerResult.lhr.audits);
         //console.log(runnerResult.lhr.audits.viewport.score);
         //console.log(runnerResult.lhr.audits['content-width'].score);
         //console.log(runnerResult.lhr.audits['load-fast-enough-for-pwa'].score);
     }
 
     const finalScreenshotFile = `data/screenshot-${runnerResult.lhr.finalUrl.split('://')[1].split('/')[0]}.jpg`;
-    const finalScreenshot = runnerResult.lhr.audits['final-screenshot'].details.data.split(';base64,').pop();
-    fs.writeFileSync(finalScreenshotFile, finalScreenshot, { encoding: 'base64' });
+    const finalScreenshot = runnerResult.lhr.audits['final-screenshot'].details ? runnerResult.lhr.audits['final-screenshot'].details.data.split(';base64,').pop() : null;
+    finalScreenshot && fs.writeFileSync(finalScreenshotFile, finalScreenshot, { encoding: 'base64' });
 
     const reportCsv = runnerResult.report;
   
@@ -100,60 +105,27 @@ console.log(array);
     runnerResult.lhr.audits['uses-text-compression'].score ? result.push("Pass") : result.push("Fail");
     runnerResult.lhr.audits['uses-responsive-images'].score ? result.push(runnerResult.lhr.audits['uses-responsive-images'].score * 100) : result.push("NA");
     runnerResult.lhr.audits['font-size'].score ? result.push("Pass") : result.push("Fail");
-
     
+    let csv = result.join();
+    result = [];
+    fs.appendFileSync("data/mobile-report.csv", csv);
+    console.log('Complete!');
+    await chrome.kill();
+    } catch (e) {
+      console.error(e);
+      await chrome.kill();
+    }
+    
+
   }
-  
 
-/*
-  var objectToCSVRow = function(dataObject) {
-    var dataArray = new Array;
-    for (var o in dataObject) {
-        var innerValue = dataObject[o]===null?'':dataObject[o].toString();
-        var result = innerValue.replace(/"/g, '""');
-        result = '"' + result + '"';
-        dataArray.push(result);
-    }
-    return dataArray.join(' ') + '\r\n';
+
 }
 
-var exportToCSV = function(arrayOfObjects) {
+(async () => {
 
-    if (!arrayOfObjects.length) {
-        return;
-    }
-
-    var csvContent = "data:text/csv;charset=utf-8,";
-
-    // headers
-    //csvContent += objectToCSVRow(Object.keys(arrayOfObjects[0]));
-    csvContent += '"Column name 1" "Column name 2" "Column name 3"\n';
-
-    arrayOfObjects.forEach(function(item){
-        csvContent += objectToCSVRow(item);
-    }); 
-
-    console.log(csvContent);
-}
-exportToCSV(result);
-*/
-
-
-let csv = result.join();
-
-/*var csv = result.map(function(d){
-    console.log(d);
-    return d.join();
-}).join('\n');*/
-
-
-  // Append the result in a report.csv 
-  // file and end the program
-
+  console.log('launching');
+  await launch();
+  console.log('done');
   
-
-
-  fs.appendFileSync("data/mobile-report.csv", csv);
-  console.log('Complete!');
-  await chrome.kill();
 })();
