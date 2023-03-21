@@ -10,7 +10,7 @@ function wait(val) {
   return new Promise(resolve => setTimeout(resolve, val));
 }
 
-let array = fs.readFileSync("urls.csv")
+let array = fs.readFileSync("data/input/urls.csv")
                 .toString().split("\n");
   
 let result = [];
@@ -76,7 +76,7 @@ async function launch() {
         //console.log(runnerResult.lhr.audits['load-fast-enough-for-pwa'].score);
     }
 
-    const finalScreenshotFile = `data/screenshot-${runnerResult.lhr.finalUrl.split('://')[1].split('/')[0]}.jpg`;
+    const finalScreenshotFile = `data/output/screenshot-${runnerResult.lhr.finalUrl.split('://')[1].split('/')[0]}.jpg`;
     const finalScreenshot = runnerResult.lhr.audits['final-screenshot'].details ? runnerResult.lhr.audits['final-screenshot'].details.data.split(';base64,').pop() : null;
     finalScreenshot && fs.writeFileSync(finalScreenshotFile, finalScreenshot, { encoding: 'base64' });
 
@@ -108,7 +108,7 @@ async function launch() {
     
     let csv = result.join();
     result = [];
-    fs.appendFileSync("data/mobile-report.csv", csv);
+    fs.appendFileSync("data/output/mobile-report.csv", csv);
     console.log('Complete!');
     await chrome.kill();
     } catch (e) {
