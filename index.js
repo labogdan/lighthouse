@@ -1,4 +1,3 @@
-// Import the required npm packages
 const fs = require("fs");
 const lighthouse = require("lighthouse");
 const chromeLauncher = require("chrome-launcher");
@@ -10,20 +9,27 @@ function wait(val) {
   return new Promise(resolve => setTimeout(resolve, val));
 }
 
-let array = fs.readFileSync("data/input/urls.csv")
-                .toString().split("\n");
+let csvRecords = [];
+
+async function readData() {
+  const readStream = fs.readFileSync('data/input/urls.csv', {
+    encoding: 'utf8',
+  });
+  
+  csvRecords.push(
+    readStream.split(/\r?\n/).map((line) => {
+        return line.split(',');
+    })
+  );  
+}
   
 let result = [];
 result.push(
-  ", URL, Mobile_Performance, Mobile_Accessibility, Mobile_Best_Practices, Mobile_SEO, HTTPS, Viewport, Speed_Index, Errors, Server_Response_Time, Image_Aspect_Ratio, Image_Size_Responsive, Font_Display, Modern_Image_Formats, Optimized_Images, Text_Compression, Responsive_Images, Font_Size"
+  ", Record_Num, URL, Mobile_Performance, Mobile_Accessibility, Mobile_Best_Practices, Mobile_SEO, HTTPS, Viewport, Speed_Index, Errors, Server_Response_Time, Image_Aspect_Ratio, Image_Size_Responsive, Font_Display, Modern_Image_Formats, Optimized_Images, Text_Compression, Responsive_Images, Font_Size"
 );
   
-console.log(array);
-
 async function launch() {
-
-  for (i in array) {
-  
+  for (i in csvRecords) {
     console.log('waiting');
     await wait(2000);
     
@@ -39,9 +45,6 @@ async function launch() {
     ]
   })
 
-// Declaring an object to specify score 
-// for what audits, categories and type
-// of output that needs to be generated 
   const options = {
     logLevel: "info",
     output: "csv",
@@ -55,25 +58,17 @@ async function launch() {
     strategy: "mobile",
     port: chrome.port,
   };
-
-    
-  
-
     console.log(i);
+    console.log(csvRecords[0][i][3]);
 
     let configuration = "";
     
     try {
     const runnerResult = 
-      await lighthouse(array[i], options);
-
-      console.log('************lighthouse results')
+      await lighthouse(csvRecords[0][i][3], options);
   
     if (runnerResult.lhr.audits) {
-        console.log(runnerResult.lhr.audits);
-        //console.log(runnerResult.lhr.audits.viewport.score);
-        //console.log(runnerResult.lhr.audits['content-width'].score);
-        //console.log(runnerResult.lhr.audits['load-fast-enough-for-pwa'].score);
+        //console.log(runnerResult.lhr.audits);
     }
 
     const finalScreenshotFile = `data/output/screenshot-${runnerResult.lhr.finalUrl.split('://')[1].split('/')[0]}.jpg`;
@@ -83,6 +78,7 @@ async function launch() {
     const reportCsv = runnerResult.report;
   
     result.push("\n");
+    result.push(csvRecords[0][i][0]);
     result.push(runnerResult.lhr.finalUrl);
   
     //console.log(runnerResult.lhr.categories);
@@ -114,18 +110,13 @@ async function launch() {
     } catch (e) {
       console.error(e);
       await chrome.kill();
-    }
-    
-
+    } 
   }
-
-
 }
 
 (async () => {
-
   console.log('launching');
+  await readData();
   await launch();
   console.log('done');
-  
 })();
