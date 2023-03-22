@@ -29,7 +29,7 @@ result.push(
 );
   
 async function launch() {
-  for (i in csvRecords) {
+  for (i in csvRecords[0]) {
     console.log('waiting');
     await wait(2000);
     
